@@ -1,21 +1,24 @@
-## 1.commonschunkplugin插件的使用
-这篇文章告诉了我们CommonsChunkPlugin插件是如何使用的，其详细论述了每一个参数的具体用法以及某几个参数结合起来的作用。但是，如果你对CommonsChunkPlugin的打包原理比较感兴趣，你可以阅读我的[这篇文章](https://github.com/liangklfangl/commonchunkplugin-source-code),其以图解的方式进行了详细论述。但是，如果你最终是为了学习webpack全家桶的内容，我强烈建议您阅读一下[React全家桶完整实例](https://github.com/liangklfangl/react-universal-bucket)，其包含了Webpack常见插件的使用，Babel打包的原理，React组件原理与服务端渲染，高阶组件等常见内容。废话不多说，请继续阅读下面内容。
+# CommonsChunkplugin插件的使用
+这篇文章告诉了我们CommonsChunkPlugin插件是如何使用的，其详细论述了每一个参数的具体用法以及某几个参数结合起来的作用。但是，如果你对CommonsChunkPlugin的打包原理比较感兴趣，你可以阅读我的[这篇文章](https://github.com/liangklfangl/commonchunkplugin-source-code),其以图解的方式进行了详细论述。
 
-### 单入口文件时候不能把引用多次的模块打印到commonChunkPlugin中
+## 1.单入口文件时候不能把引用多次的模块打印到commonChunkPlugin中
 
-注意：`example1(对应于目录example1，修改webpack.config.js中的配置就可以了，以下例子相同)`
+>注意：`example1`(对应于目录`example1`，修改`webpack.config.js`中的配置就可以了，以下例子相同)
+
 
 ```js
 var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 module.exports = {
-  entry: 
+  entry:
   {
     main:process.cwd()+'/example1/main.js',
   },
   output: {
     path:process.cwd()+'/dest/example1',
-    filename: '[name].js'
+    filename: '[name].output.js'
   },
+  devtool:'cheap-source-map',
+
   plugins: [
    new CommonsChunkPlugin({
        name:"chunk",
@@ -25,132 +28,50 @@ module.exports = {
 };
 ```
 
-虽然在example1中chunk2被引用了两次，但是最终并没有打包到chunk.js中，我们看看chunk.js中的内容:
+虽然在example1中`module2`被引用了两次（`main` 和 `module1` ），但是最终并没有打包到`chunk.js`中，
 
-```js
-/******/ (function(modules) { // webpackBootstrap
-/******/    // install a JSONP callback for chunk loading
-/******/    var parentJsonpFunction = window["webpackJsonp"];
-/******/    window["webpackJsonp"] = function webpackJsonpCallback(chunkIds, moreModules) {
-/******/        // add "moreModules" to the modules object,
-/******/        // then flag all "chunkIds" as loaded and fire callback
-/******/        var moduleId, chunkId, i = 0, callbacks = [];
-/******/        for(;i < chunkIds.length; i++) {
-/******/            chunkId = chunkIds[i];
-/******/            if(installedChunks[chunkId])
-/******/                callbacks.push.apply(callbacks, installedChunks[chunkId]);
-/******/            installedChunks[chunkId] = 0;
-/******/        }
-/******/        for(moduleId in moreModules) {
-/******/            modules[moduleId] = moreModules[moduleId];
-/******/        }
-/******/        if(parentJsonpFunction) parentJsonpFunction(chunkIds, moreModules);
-/******/        while(callbacks.length)
-/******/            callbacks.shift().call(null, __webpack_require__);
-/******/        if(moreModules[0]) {
-/******/            installedModules[0] = 0;
-/******/            return __webpack_require__(0);
-/******/        }
-/******/    };
+**这是因为 `module1` 被 `main` 引用，`module1` 会被打包到 `main`的chunk 文件(`main.out.js`) 中， 然后 `module1`的chunk 文件 `module1.js` 就 *`不存在`* 了, 那么 `module2` 其实只被 `main` 这一个chunk 引用了**
 
-/******/    // The module cache
-/******/    var installedModules = {};
+> 此时 `chunk.js` 只有 webpack 的运行时代码。
 
-/******/    // object to store loaded and loading chunks
-/******/    // "0" means "already loaded"
-/******/    // Array means "loading", array contains callbacks
-/******/    var installedChunks = {
-/******/        1:0
-/******/    };
 
-/******/    // The require function
-/******/    function __webpack_require__(moduleId) {
-
-/******/        // Check if module is in cache
-/******/        if(installedModules[moduleId])
-/******/            return installedModules[moduleId].exports;
-
-/******/        // Create a new module (and put it into the cache)
-/******/        var module = installedModules[moduleId] = {
-/******/            exports: {},
-/******/            id: moduleId,
-/******/            loaded: false
-/******/        };
-
-/******/        // Execute the module function
-/******/        modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
-/******/        // Flag the module as loaded
-/******/        module.loaded = true;
-
-/******/        // Return the exports of the module
-/******/        return module.exports;
-/******/    }
-
-/******/    // This file contains only the entry chunk.
-/******/    // The chunk loading function for additional chunks
-/******/    __webpack_require__.e = function requireEnsure(chunkId, callback) {
-/******/        // "0" is the signal for "already loaded"
-/******/        if(installedChunks[chunkId] === 0)
-/******/            return callback.call(null, __webpack_require__);
-
-/******/        // an array means "currently loading".
-/******/        if(installedChunks[chunkId] !== undefined) {
-/******/            installedChunks[chunkId].push(callback);
-/******/        } else {
-/******/            // start chunk loading
-/******/            installedChunks[chunkId] = [callback];
-/******/            var head = document.getElementsByTagName('head')[0];
-/******/            var script = document.createElement('script');
-/******/            script.type = 'text/javascript';
-/******/            script.charset = 'utf-8';
-/******/            script.async = true;
-
-/******/            script.src = __webpack_require__.p + "" + chunkId + "." + ({"0":"main"}[chunkId]||chunkId) + ".js";
-/******/            head.appendChild(script);
-/******/        }
-/******/    };
-
-/******/    // expose the modules object (__webpack_modules__)
-/******/    __webpack_require__.m = modules;
-
-/******/    // expose the module cache
-/******/    __webpack_require__.c = installedModules;
-
-/******/    // __webpack_public_path__
-/******/    __webpack_require__.p = "";
-/******/ })
-/************************************************************************/
-/******/ ([]);
-```
-
-打包成的main.js中内容是:
+打包成的main.output.js中内容包含了 module1.js、module2.js 和 main.js 的内容
 
 ```js
 webpackJsonp([0,1],[
 /* 0 */
-/***/ function(module, exports, __webpack_require__) {
-    __webpack_require__(1);
-    __webpack_require__(2);
-/***/ },
+/***/ (function(module, exports) {
+
+
+exports.module2=2;
+
+
+/***/ }),
 /* 1 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ (function(module, exports, __webpack_require__) {
 
-    __webpack_require__(2);
-    var chunk1=1;
-    exports.chunk1=chunk1;
+__webpack_require__(0);
 
-/***/ },
+exports.module1=1;
+
+
+/***/ }),
 /* 2 */
-/***/ function(module, exports) {
-    var chunk2=1;
-    exports.chunk2=chunk2;
+/***/ (function(module, exports, __webpack_require__) {
 
-/***/ }
-]);
+__webpack_require__(1);
+__webpack_require__(0);
+console.log('main1.');
+
+
+/***/ })
+],[2]);
+//# sourceMappingURL=main.output.js.map
 ```
 
-### 多入口文件时候能把引用多次的模块打印到commonChunkPlugin中
+<br/>
+
+## 2. 多入口文件时候能把引用多次的模块打印到commonChunkPlugin中
 
 在example2中我们配置了如下:
 
@@ -158,406 +79,188 @@ webpackJsonp([0,1],[
 minChunks:2
 ```
 
-我们两个入口文件中公有的chunk1.js和chunk2.js被打印到chunk.js中!
+example2 有两个入口 `main` 和 `main1`（所以此时确定至少有两个chunk，对应的文件分别是 `main.output.js` 和 `main1.output.js`)。
+
+main 和 main1 都依赖了 `module1`， 所以`module1`会打包到 common chunk 中（根据配置，此时的common chunk 文件是 `chunk.output.js`)，`module2` 被 main、main1 以及common chunk 三个chunk依赖，所以也会打包到common chunk中. 其实此时即使 `main` 和 `main1` 不依赖`module2`， `module2` 也会随`module1` 一同打包进 common chunk.
+
+>common chunk 之所以依赖 module2， 是因为module1 依赖module2， 而module2在common chunk中
+>
+
+<br/>
+
+## 3. 将公共业务模块与类库或框架分开打包
 
 ```js
-/******/ (function(modules) { // webpackBootstrap
-/******/    // install a JSONP callback for chunk loading
-/******/    var parentJsonpFunction = window["webpackJsonp"];
-/******/    window["webpackJsonp"] = function webpackJsonpCallback(chunkIds, moreModules) {
-/******/        // add "moreModules" to the modules object,
-/******/        // then flag all "chunkIds" as loaded and fire callback
-/******/        var moduleId, chunkId, i = 0, callbacks = [];
-/******/        for(;i < chunkIds.length; i++) {
-/******/            chunkId = chunkIds[i];
-/******/            if(installedChunks[chunkId])
-/******/                callbacks.push.apply(callbacks, installedChunks[chunkId]);
-/******/            installedChunks[chunkId] = 0;
-/******/        }
-/******/        for(moduleId in moreModules) {
-/******/            modules[moduleId] = moreModules[moduleId];
-/******/        }
-/******/        if(parentJsonpFunction) parentJsonpFunction(chunkIds, moreModules);
-/******/        while(callbacks.length)
-/******/            callbacks.shift().call(null, __webpack_require__);
-/******/        if(moreModules[0]) {
-/******/            installedModules[0] = 0;
-/******/            return __webpack_require__(0);
-/******/        }
-/******/    };
-
-/******/    // The module cache
-/******/    var installedModules = {};
-
-/******/    // object to store loaded and loading chunks
-/******/    // "0" means "already loaded"
-/******/    // Array means "loading", array contains callbacks
-/******/    var installedChunks = {
-/******/        2:0
-/******/    };
-
-/******/    // The require function
-/******/    function __webpack_require__(moduleId) {
-
-/******/        // Check if module is in cache
-/******/        if(installedModules[moduleId])
-/******/            return installedModules[moduleId].exports;
-
-/******/        // Create a new module (and put it into the cache)
-/******/        var module = installedModules[moduleId] = {
-/******/            exports: {},
-/******/            id: moduleId,
-/******/            loaded: false
-/******/        };
-
-/******/        // Execute the module function
-/******/        modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
-/******/        // Flag the module as loaded
-/******/        module.loaded = true;
-
-/******/        // Return the exports of the module
-/******/        return module.exports;
-/******/    }
-
-/******/    // This file contains only the entry chunk.
-/******/    // The chunk loading function for additional chunks
-/******/    __webpack_require__.e = function requireEnsure(chunkId, callback) {
-/******/        // "0" is the signal for "already loaded"
-/******/        if(installedChunks[chunkId] === 0)
-/******/            return callback.call(null, __webpack_require__);
-
-/******/        // an array means "currently loading".
-/******/        if(installedChunks[chunkId] !== undefined) {
-/******/            installedChunks[chunkId].push(callback);
-/******/        } else {
-/******/            // start chunk loading
-/******/            installedChunks[chunkId] = [callback];
-/******/            var head = document.getElementsByTagName('head')[0];
-/******/            var script = document.createElement('script');
-/******/            script.type = 'text/javascript';
-/******/            script.charset = 'utf-8';
-/******/            script.async = true;
-
-/******/            script.src = __webpack_require__.p + "" + chunkId + "." + ({"0":"main","1":"main1"}[chunkId]||chunkId) + ".js";
-/******/            head.appendChild(script);
-/******/        }
-/******/    };
-
-/******/    // expose the modules object (__webpack_modules__)
-/******/    __webpack_require__.m = modules;
-
-/******/    // expose the module cache
-/******/    __webpack_require__.c = installedModules;
-
-/******/    // __webpack_public_path__
-/******/    __webpack_require__.p = "";
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */,
-/* 1 */
-/***/ function(module, exports, __webpack_require__) {
-
-    __webpack_require__(2);
-    var chunk1=1;
-    exports.chunk1=chunk1;
-
-/***/ },
-/* 2 */
-/***/ function(module, exports) {
-
-    var chunk2=1;
-    exports.chunk2=chunk2;
-/***/ }
-/******/ ]);
-```
-
-
-### 将公共业务模块与类库或框架分开打包
-
-#### 例1
-
-```js
-var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+let HtmlWebpackPlugin = require('html-webpack-plugin');
+let CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 module.exports = {
     entry: {
         main: process.cwd()+'/example3/main.js',
         main1: process.cwd()+'/example3/main1.js',
-        common1:["jquery"],
-        common2:["vue"]
-    },
-    output: {
-        path: process.cwd()+'/dest/example3',
-        filename: '[name].js'
-    },
-    plugins: [
-        new CommonsChunkPlugin({
-            name: ["chunk",'common1','common2'],//对应于上面的entry的key
-            minChunks:2
-        })
-    ]
-};
-```
-
-上面的配置就可以把jquery,vue分别打包到一个独立的chunk中，分别为common1.js,common2.js。同时把main1,main的`公共业务模块`打包到chunk.js中,而其他非公共的业务代码全部保留在main.js和main1.js中。
-
-注意：webpack用插件CommonsChunkPlugin进行打包的时候，将符合`引用次数(minChunks)`的模块打包到name参数的数组的第一个块里（chunk）,然后数组后面的块依次打包(`查找entry里的key,没有找到相关的key就生成一个空的块`)，最后一个块包含webpack生成的在浏览器上使用各个块的加载代码，所以页面上使用的时候最后一个块必须最先加载,我们看看最后一个块，也就是common2.js的内容头部：
-
-```js
-/******/ (function(modules) { // webpackBootstrap
-/******/  // install a JSONP callback for chunk loading
-/******/  var parentJsonpFunction = window["webpackJsonp"];
-/******/  window["webpackJsonp"] = function webpackJsonpCallback(chunkIds, moreModules) {
-/******/    // add "moreModules" to the modules object,
-/******/    // then flag all "chunkIds" as loaded and fire callback
-/******/    var moduleId, chunkId, i = 0, callbacks = [];
-/******/    for(;i < chunkIds.length; i++) {
-/******/      chunkId = chunkIds[i];
-/******/      if(installedChunks[chunkId])
-/******/        callbacks.push.apply(callbacks, installedChunks[chunkId]);
-/******/      installedChunks[chunkId] = 0;
-/******/    }
-/******/    for(moduleId in moreModules) {
-/******/      modules[moduleId] = moreModules[moduleId];
-/******/    }
-/******/    if(parentJsonpFunction) parentJsonpFunction(chunkIds, moreModules);
-/******/    while(callbacks.length)
-/******/      callbacks.shift().call(null, __webpack_require__);
-/******/    if(moreModules[0]) {
-/******/      installedModules[0] = 0;
-/******/      return __webpack_require__(0);
-/******/    }
-/******/  };
-
-/******/  // The module cache
-/******/  var installedModules = {};
-
-/******/  // object to store loaded and loading chunks
-/******/  // "0" means "already loaded"
-/******/  // Array means "loading", array contains callbacks
-/******/  var installedChunks = {
-/******/    1:0
-/******/  };
-
-/******/  // The require function
-/******/  function __webpack_require__(moduleId) {
-
-/******/    // Check if module is in cache
-/******/    if(installedModules[moduleId])
-/******/      return installedModules[moduleId].exports;
-
-/******/    // Create a new module (and put it into the cache)
-/******/    var module = installedModules[moduleId] = {
-/******/      exports: {},
-/******/      id: moduleId,
-/******/      loaded: false
-/******/    };
-
-/******/    // Execute the module function
-/******/    modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
-/******/    // Flag the module as loaded
-/******/    module.loaded = true;
-
-/******/    // Return the exports of the module
-/******/    return module.exports;
-/******/  }
-
-/******/  // This file contains only the entry chunk.
-/******/  // The chunk loading function for additional chunks
-/******/  __webpack_require__.e = function requireEnsure(chunkId, callback) {
-/******/    // "0" is the signal for "already loaded"
-/******/    if(installedChunks[chunkId] === 0)
-/******/      return callback.call(null, __webpack_require__);
-
-/******/    // an array means "currently loading".
-/******/    if(installedChunks[chunkId] !== undefined) {
-/******/      installedChunks[chunkId].push(callback);
-/******/    } else {
-/******/      // start chunk loading
-/******/      installedChunks[chunkId] = [callback];
-/******/      var head = document.getElementsByTagName('head')[0];
-/******/      var script = document.createElement('script');
-/******/      script.type = 'text/javascript';
-/******/      script.charset = 'utf-8';
-/******/      script.async = true;
-
-/******/      script.src = __webpack_require__.p + "" + chunkId + "." + ({"0":"common1","2":"main","3":"main1","4":"chunk"}[chunkId]||chunkId) + ".js";
-/******/      head.appendChild(script);
-/******/    }
-/******/  };
-
-/******/  // expose the modules object (__webpack_modules__)
-/******/  __webpack_require__.m = modules;
-
-/******/  // expose the module cache
-/******/  __webpack_require__.c = installedModules;
-
-/******/  // __webpack_public_path__
-/******/  __webpack_require__.p = "";
-
-/******/  // Load entry module and return exports
-/******/  return __webpack_require__(0);
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */
-/***/ function(module, exports, __webpack_require__) {
-
-  module.exports = __webpack_require__(2);
-
-/***/ }])
-```
-
-看到这里你就会明白为什么他要最后加载了把。
-
-#### 例2
-
-```js
-var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
-module.exports = {
-    entry: {
-        main: process.cwd()+'/example4/main.js',
-        main1: process.cwd()+'/example4/main1.js',
-        jquery:["jquery"],
+        module1:process.cwd()+'/example3/module1.js',
+        jquery:"jquery",
         vue:["vue"]
     },
     output: {
-        path: process.cwd() + '/dest/example4',
-        filename: '[name].js'
+        path: process.cwd()+'/dest/example3',
+        filename: '[name].entry.js'
     },
     plugins: [
-        new CommonsChunkPlugin({
-            name: ["common","jquery","vue","load"],
-            minChunks:2
-        })
+      new HtmlWebpackPlugin({
+        inject: true,
+        chunks: ['main'],
+        filename: 'index.main.html'
+      }),
+      new HtmlWebpackPlugin({
+        inject: true,
+        chunks: ['manifest','chunk','main1'],
+        filename: 'index.main1.html'
+      }),
+
+      new CommonsChunkPlugin({
+        names: ["chunk", 'jquery', 'vue', 'load'],
+        filename:'[name].common.js',
+        minChunks:2
+      })
     ]
 };
-```
 
-这样我们的业务共享代码会提取到common.js中，如下:
+
+```
+上面的配置是如何工作的呢？ 
+
+根据 entry 的配置， 首先（临时）生成了 
+	
+- `main.entry.js` -> `main`
+- `main1.entry.js` -> `main1`
+- `jquery.entry.js` -> `jquery`
+- `vue.entry.js` -> `vue`
+- `module1.entry.js` -> `module1`
+
+
+5 个 **`entry`** 类型的chunk 文件,
+
+
+
+
+在 CCP 中定义的chunk, 除去第一个和最后一个chunk外，如果还有其它chunk， 则检测其name是否存在于 webpack.entry 定义的chunk中， 如果在，将其打包进CommonsChunkPlugin定义的chunk文件， 这个例子中则是把 `jquery.output.js` 打包进 `jquery.common.js`， 把 `vue.output.js` 打包进 `vue.common.js`， 并把相应的entry的类型的chunk删掉。
+
+现在我们有 5 个 chunk 文件， 前3个是 **`entry`** 类型的，后2个是 **`common`** 类型的：
+
+- `main.entry.js` -> `main`
+- `main1.entry.js` -> `main1`
+- `module1.entry.js` -> `module1`
+
+- `jquery.common.js` -> `jquery`
+- `vue.common.js` -> `vue`
+
+
+接下来 CCP 把 这 5 个 chunk 中符合要求的`module` 抽出来，没有被common类型chunk（这里值 `jquery` 和 `vue`）依赖的module打包进 `CommonsChunkPlugin`  配置的第一个chunk， 即 `mylib` ， **所以 `main`、`main1`、`module1` 三个 *chunk* 依赖的 `module1`、`module2` 两个 *module* 都抽取到 `mylib` 这个 *chunk* 了**。
+
+> 你会发现 `module1.entry.js` 只剩一行代码了：
+> 
+> ```js
+>  webpackJsonp([5,6],[],[1]);
+> ``` 
+
+被common类型chunk依赖的公共module保留在原来的common chunk中（比如， 被jquery依赖的公共module保留在jquery， 被vue依赖的公共module保留在vue， 如果jquery 和 vue 也有共同依赖，且minChunks 满足要求，则保留其中一个），
+
+经过处理，现在多了一个 common 类型的 `mylib` chunk, `mylib` 包含 `module1` 和 `module2` 两个 module.
+
+- `main.entry.js` -> `main`
+- `main1.entry.js` -> `main1`
+- `module1.entry.js` -> `module1` (这里指 **`chunk`**, 不要和那个名叫 *module1* 这个 **`module`**混淆）
+
+- `jquery.common.js` -> `jquery`
+- `vue.common.js` -> `vue`
+- `mylib.common.js` --> `mylib`
+
+最后，webpack的`runtime code` 打包近最后一个chunk， 即 `load` ,
+
+- `main.entry.js` -> `main`
+- `main1.entry.js` -> `main1`
+- `module1.entry.js` -> `module1` (这里指 **`chunk`**, 不要和那个名叫 *module1* 这个 **`module`**混淆）
+
+- `jquery.common.js` -> `jquery`
+- `vue.common.js` -> `vue`
+- `mylib.common.js` --> `mylib`
+- `load.common.js` --> `load`
+
+
+这就是所有的输出了.
+
+<br/> <br/>
+
+-------------------
+
+> webpack用插件`CommonsChunkPlugin`进行打包的时候，将符合 **`引用次数(minChunks)`** 的模块打包到**`names`**参数的数组的**第一个块**里（chunk）,
+> 
+> 然后数组后面的块依次打包( 查找`entry`里的 `key`,没有找到相关的`key`就生成一个空的块 )，**最后一个块** 包含webpack生成的在浏览器上使用各个块的加载代码(runtime code)，所以页面上使用的时候最后一个块必须最先加载.
+> 
+
+
+<br/> <br/>
+
+-------------------
+
+这里也区分一下 **`module`** 和 **`chunk`**：
+
+`module1.js` 定义了一个 `module`，
 
 ```js
-webpackJsonp([4,5],[
-//第一个参数是一个数组，数组中第一个元素是该chunkId，而其余元素是该chunk依赖的其他模块
-/* 0 */,
-/* 1 */,
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-  __webpack_require__(3);
-  var chunk1=1;
-  exports.chunk1=chunk1;
+require("./module2");
 
-/***/ },
-/* 3 */
-/***/ function(module, exports) {
+exports.module1=1;
 
-  var chunk2=1;
-  exports.chunk2=chunk2;
+``` 
 
-/***/ }
-]);
-```
-
-而我们的load.js中仅仅是用于加载其他chunk代码的函数,所以必须在最后加载才行：
+但是如果把它作为一个 `entry`， 那么会生成一个`chunk`(生成的chunk文件是 `module1.entry.js`)：
 
 ```js
-/******/ (function(modules) { // webpackBootstrap
-/******/  // install a JSONP callback for chunk loading
-/******/  var parentJsonpFunction = window["webpackJsonp"];
-/******/  window["webpackJsonp"] = function webpackJsonpCallback(chunkIds, moreModules) {
-/******/    // add "moreModules" to the modules object,
-/******/    // then flag all "chunkIds" as loaded and fire callback
-/******/    var moduleId, chunkId, i = 0, callbacks = [];
-/******/    for(;i < chunkIds.length; i++) {
-/******/      chunkId = chunkIds[i];
-/******/      if(installedChunks[chunkId])
-/******/        callbacks.push.apply(callbacks, installedChunks[chunkId]);
-/******/        installedChunks[chunkId] = 0;
-/******/    }
-/******/    for(moduleId in moreModules) {
-/******/      modules[moduleId] = moreModules[moduleId];
-/******/    }
-/******/    if(parentJsonpFunction) parentJsonpFunction(chunkIds, moreModules);
-/******/    while(callbacks.length)
-/******/      callbacks.shift().call(null, __webpack_require__);
-/******/    if(moreModules[0]) {
-/******/      installedModules[0] = 0;
-/******/      return __webpack_require__(0);
-/******/    }
-/******/  };
+webpackJsonp([3,5],[
+/* 0 */
+/***/ (function(module, exports) {
 
-/******/  // The module cache
-/******/  var installedModules = {};
 
-/******/  // object to store loaded and loading chunks
-/******/  // "0" means "already loaded"
-/******/  // Array means "loading", array contains callbacks
-/******/  var installedChunks = {
-/******/    5:0
-/******/  };
+exports.module2=2;
 
-/******/  // The require function
-/******/  function __webpack_require__(moduleId) {
 
-/******/    // Check if module is in cache
-/******/    if(installedModules[moduleId])
-/******/      return installedModules[moduleId].exports;
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
 
-/******/    // Create a new module (and put it into the cache)
-/******/    var module = installedModules[moduleId] = {
-/******/      exports: {},
-/******/      id: moduleId,
-/******/      loaded: false
-/******/    };
+__webpack_require__(0);
 
-/******/    // Execute the module function
-/******/    modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+exports.module1=1;
 
-/******/    // Flag the module as loaded
-/******/    module.loaded = true;
 
-/******/    // Return the exports of the module
-/******/    return module.exports;
-/******/  }
+/***/ })
+],[1]);
 
-/******/  // This file contains only the entry chunk.
-/******/  // The chunk loading function for additional chunks
-/******/  __webpack_require__.e = function requireEnsure(chunkId, callback) {
-/******/    // "0" is the signal for "already loaded"
-/******/    if(installedChunks[chunkId] === 0)
-/******/      return callback.call(null, __webpack_require__);
-
-/******/    // an array means "currently loading".
-/******/    if(installedChunks[chunkId] !== undefined) {
-/******/      installedChunks[chunkId].push(callback);
-/******/    } else {
-/******/      // start chunk loading
-/******/      installedChunks[chunkId] = [callback];
-/******/      var head = document.getElementsByTagName('head')[0];
-/******/      var script = document.createElement('script');
-/******/      script.type = 'text/javascript';
-/******/      script.charset = 'utf-8';
-/******/      script.async = true;
-
-/******/      script.src = __webpack_require__.p + "" + chunkId + "." + ({"0":"jquery","1":"main","2":"main1","3":"vue","4":"common"}[chunkId]||chunkId) + ".js";
-/******/      head.appendChild(script);
-/******/    }
-/******/  };
-
-/******/  // expose the modules object (__webpack_modules__)
-/******/  __webpack_require__.m = modules;
-
-/******/  // expose the module cache
-/******/  __webpack_require__.c = installedModules;
-
-/******/  // __webpack_public_path__
-/******/  __webpack_require__.p = "";
-/******/ })
-/************************************************************************/
-/******/ ([]);
 ```
+
+
+由此可知，`chunk` 是定义在 **`webpackJsonp(..)`** 函数中的。
+
+<br/>
+
+由于module1 这个chunk `(对应文件 module1.output.js)` 依赖的 module `module1` 和 `module2` 同时被 main 和 main1 两个chunk 用到， 所以最终被抽出到 `mylib` 这个chunk中了，
+
+而module1 这个chunk 就变成了
+
+```js
+webpackJsonp([5,6],[],[1]);
+```
+
+<br/><br/>
+
+
+> 如果在CCP 配置中增加一个 common chunk `module1`， 最后会发现 `mylib` 不见了， 因为 **common chunk** 的依赖优先留在本chunk中，所以 *module*  `module1` 和 `module2` 都留在 `module1.common.js` 中， 而 mylib 这个chunk 就没必要存在了。 *可参考 example4*
+> 
+
+<br/><br/>
+
+##todo:
 
 ### 参数minChunks: Infinity
 
@@ -635,13 +338,17 @@ module.exports = {
 
 
 
-## 2.从commonschunkplugin看Compiler对象
+<br/><br/><br/><br/>
+
+---------------
+
+## 从 CommonsChunkPlugin 看 Compiler 对象
 
  首先我们运行example1中的代码，其中webpack配置如下(可以在配置文件中自己打开注释部分):
 ```js
 var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 module.exports = {
-  entry: 
+  entry:
   {
     main:process.cwd()+'/example1/main.js',
   },
@@ -671,14 +378,14 @@ Compiler {
   records: {},
   fileTimestamps: {},
   contextTimestamps: {},
-  resolvers: 
+  resolvers:
    { normal: Tapable { _plugins: {}, fileSystem: null },
      loader: Tapable { _plugins: {}, fileSystem: null },
      context: Tapable { _plugins: {}, fileSystem: null } },
-  parser: 
+  parser:
    Parser {
-     _plugins: 
-      { 'evaluate Literal': 
+     _plugins:
+      { 'evaluate Literal':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -686,7 +393,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate LogicalExpression': 
+        'evaluate LogicalExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -694,7 +401,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate BinaryExpression': 
+        'evaluate BinaryExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -702,7 +409,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate UnaryExpression': 
+        'evaluate UnaryExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -710,7 +417,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate typeof undefined': 
+        'evaluate typeof undefined':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -718,7 +425,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate Identifier': 
+        'evaluate Identifier':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -726,7 +433,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate MemberExpression': 
+        'evaluate MemberExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -734,7 +441,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression': 
+        'evaluate CallExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -742,7 +449,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .replace': 
+        'evaluate CallExpression .replace':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -750,7 +457,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .substr': 
+        'evaluate CallExpression .substr':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -758,7 +465,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .substring': 
+        'evaluate CallExpression .substring':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -766,7 +473,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .split': 
+        'evaluate CallExpression .split':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -774,7 +481,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate ConditionalExpression': 
+        'evaluate ConditionalExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -782,7 +489,7 @@ Compiler {
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate ArrayExpression': 
+        'evaluate ArrayExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -791,9 +498,9 @@ Compiler {
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ] },
      options: undefined },
-  options: 
+  options:
    { entry: { main: '/Users/xxx/Desktop/commonsChunkPlugin_Config/example1/main.js' },
-     output: 
+     output:
       { path: '/Users/xxx/Desktop/commonsChunkPlugin_Config/dest/example1',
         filename: '[name].js',
         libraryTarget: 'var',
@@ -806,7 +513,7 @@ Compiler {
         hashDigestLength: 20,
         sourcePrefix: '\t',
         devtoolLineToLine: false },
-     plugins: 
+     plugins:
       [ CommonsChunkPlugin {
           chunkNames: 'chunk',
           filenameTemplate: undefined,
@@ -821,19 +528,19 @@ Compiler {
      devtool: false,
      cache: true,
      target: 'web',
-     node: 
+     node:
       { console: false,
         process: true,
         global: true,
         setImmediate: true,
         __filename: 'mock',
         __dirname: 'mock' },
-     resolve: 
+     resolve:
       { fastUnsafe: [ [length]: 0 ],
         alias: {},
         packageAlias: 'browser',
         modulesDirectories: [ 'web_modules', 'node_modules', [length]: 2 ],
-        packageMains: 
+        packageMains:
          [ 'webpack',
            'browser',
            'web',
@@ -842,30 +549,30 @@ Compiler {
            'main',
            [length]: 6 ],
         extensions: [ '', '.webpack.js', '.web.js', '.js', '.json', [length]: 5 ] },
-     resolveLoader: 
+     resolveLoader:
       { fastUnsafe: [ [length]: 0 ],
         alias: {},
-        modulesDirectories: 
+        modulesDirectories:
          [ 'web_loaders',
            'web_modules',
            'node_loaders',
            'node_modules',
            [length]: 4 ],
         packageMains: [ 'webpackLoader', 'webLoader', 'loader', 'main', [length]: 4 ],
-        extensions: 
+        extensions:
          [ '',
            '.webpack-loader.js',
            '.web-loader.js',
            '.loader.js',
            '.js',
            [length]: 5 ],
-        moduleTemplates: 
+        moduleTemplates:
          [ '*-webpack-loader',
            '*-web-loader',
            '*-loader',
            '*',
            [length]: 4 ] },
-     module: 
+     module:
       { unknownContextRequest: '.',
         unknownContextRecursive: true,
         unknownContextRegExp: { /^\.\/.*$/ [lastIndex]: 0 },
@@ -884,10 +591,10 @@ Compiler {
 ### 2.1 首先她有一个Parser对象用于对代码进行解析
 
 ```js
-parser: 
+parser:
    Parser {
-     _plugins: 
-      { 'evaluate Literal': 
+     _plugins:
+      { 'evaluate Literal':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -895,7 +602,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate LogicalExpression': 
+        'evaluate LogicalExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -903,7 +610,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate BinaryExpression': 
+        'evaluate BinaryExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -911,7 +618,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate UnaryExpression': 
+        'evaluate UnaryExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -919,7 +626,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate typeof undefined': 
+        'evaluate typeof undefined':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -927,7 +634,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-     'evaluate Identifier': 
+     'evaluate Identifier':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -935,7 +642,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate MemberExpression': 
+        'evaluate MemberExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -943,7 +650,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression': 
+        'evaluate CallExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -951,7 +658,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .replace': 
+        'evaluate CallExpression .replace':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -959,7 +666,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .substr': 
+        'evaluate CallExpression .substr':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -967,7 +674,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .substring': 
+        'evaluate CallExpression .substring':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -975,7 +682,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate CallExpression .split': 
+        'evaluate CallExpression .split':
          [ { [Function]
              [length]: 2,
              [name]: '',
@@ -983,7 +690,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate ConditionalExpression': 
+        'evaluate ConditionalExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -991,7 +698,7 @@ parser:
              [caller]: null,
              [prototype]: { [constructor]: [Circular] } },
            [length]: 1 ],
-        'evaluate ArrayExpression': 
+        'evaluate ArrayExpression':
          [ { [Function]
              [length]: 1,
              [name]: '',
@@ -1007,9 +714,9 @@ parser:
 ### 2.2 她有一个Option对象表示webpack配置信息
 
 ```js
- options: 
+ options:
    { entry: { main: '/Users/xxx/Desktop/commonsChunkPlugin_Config/example1/main.js' },//entry对象表示我们配置的入口文件
-     output: 
+     output:
       { path: '/Users/xxx/Desktop/commonsChunkPlugin_Config/dest/example1',
           //输出路径
         filename: '[name].js',
@@ -1026,7 +733,7 @@ parser:
         sourcePrefix: '\t',
         devtoolLineToLine: false },
       //output对象表示输出的配置
-     plugins: 
+     plugins:
      //plugins数组表示配置的plugin数组信息
       [ CommonsChunkPlugin {
           chunkNames: 'chunk',
@@ -1044,7 +751,7 @@ parser:
      cache: true,
      target: 'web',
      //node
-     node: 
+     node:
       { console: false,
         process: true,
         global: true,
@@ -1052,12 +759,12 @@ parser:
         __filename: 'mock',
         __dirname: 'mock' },
      //resolve对象
-     resolve: 
+     resolve:
       { fastUnsafe: [ [length]: 0 ],
         alias: {},
         packageAlias: 'browser',
         modulesDirectories: [ 'web_modules', 'node_modules', [length]: 2 ],
-        packageMains: 
+        packageMains:
          [ 'webpack',
            'browser',
            'web',
@@ -1067,31 +774,31 @@ parser:
            [length]: 6 ],
         extensions: [ '', '.webpack.js', '.web.js', '.js', '.json', [length]: 5 ] },
      //resolveLoader对象
-     resolveLoader: 
+     resolveLoader:
       { fastUnsafe: [ [length]: 0 ],
         alias: {},
-        modulesDirectories: 
+        modulesDirectories:
          [ 'web_loaders',
            'web_modules',
            'node_loaders',
            'node_modules',
            [length]: 4 ],
         packageMains: [ 'webpackLoader', 'webLoader', 'loader', 'main', [length]: 4 ],
-        extensions: 
+        extensions:
          [ '',
            '.webpack-loader.js',
            '.web-loader.js',
            '.loader.js',
            '.js',
            [length]: 5 ],
-        moduleTemplates: 
+        moduleTemplates:
          [ '*-webpack-loader',
            '*-web-loader',
            '*-loader',
            '*',
            [length]: 4 ] },
     //module对象
-     module: 
+     module:
       { unknownContextRequest: '.',
         unknownContextRecursive: true,
         unknownContextRegExp: { /^\.\/.*$/ [lastIndex]: 0 },
@@ -1153,4 +860,3 @@ library和libraryTarget,externals的使用可以参见[webpack中的externals vs
 [webpack CommonsChunkPlugin详细教程](https://segmentfault.com/a/1190000006808865)
 
 [webpack中的externals vs libraryTarget vs library](https://github.com/liangklfangl/webpack-external-library)
-

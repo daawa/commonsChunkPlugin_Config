@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "NODE_ENV=development node ./hot/webpack-dev-server --env.dev",
-    "build": "rm -Rf dest/example7 | NODE_ENV=production webpack --config ./hot/webpack.config.js --progress --env.prod"
+    "build": "NODE_ENV=production webpack  --progress --env.prod"
   },
   "repository": {
     "type": "git",
@@ -23,7 +23,6 @@
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^1.1.5",
     "gulp": "^3.9.1",
-    "html-webpack-plugin": "^2.24.1",
     "jquery": "^3.1.1",
     "less": "^2.7.1",
     "less-loader": "^2.2.3",
@@ -41,6 +40,8 @@
     "babel-loader": "^6.2.7",
     "babel-preset-latest": "^6.16.0",
     "babel-preset-react": "^6.16.0",
+    "html-webpack-plugin": "^2.30.1",
+    "html-webpack-plugin-multihtml": "^2.30.3",
     "webpack-dev-server": "2.2.0"
   }
 }
