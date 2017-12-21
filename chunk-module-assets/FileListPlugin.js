@@ -9,8 +9,10 @@ FileListPlugin.prototype.apply = function(compiler) {
     // Loop through all compiled assets,
     // adding a new line item for each filename.
     for (var filename in compilation.assets) {
+      console.log("\nfilename:" + filename);
       filelist += ('- '+ filename +'\n');
     }
+    
     const chunks = compilation.chunks;
     chunks.forEach(function(chunk,i){
       console.log('chunk.name====',chunk);
@@ -20,10 +22,10 @@ FileListPlugin.prototype.apply = function(compiler) {
 
     const assets = compilation.getStats().toJson().assets;
     assets.forEach(function(asset,i){
-      console.log('asset.name====',asset.name);
-      console.log('asset.chunkNames====',asset.chunkNames);
-       console.log('asset.chunks====',asset.chunks);
-        console.log("----------------");
+      console.log("\n" + i + ' asset.name====',asset.name);
+      console.log('  asset.chunkNames====',asset.chunkNames);
+       console.log('  asset.chunks====',asset.chunks);
+        console.log("  ----------------");
     });
     // 所有的chunk的都有name，但是通过require.ensure产生的chunk除外
     // console.log('++++++++',util.inspect(compilation.chunks,{showHidden:true,depth:3}));

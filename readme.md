@@ -260,11 +260,22 @@ webpackJsonp([5,6],[],[1]);
 
 <br/><br/>
 
-##todo:
 
-### 参数minChunks: Infinity
 
-下面的配置会把main.js和main1.js公共的业务代码打包到jquery.js中:
+## 4.参数 `minChunks`: `Infinity`
+
+
+minChunks 是指被抽取到 `common` 类型 chunk 的公共 moudule 最少被引用的次数，而 `infinity` 表示无限大，这样就没有任何module符合minChunks 的要求了。
+因此不会有任何module 被 ***抽取*** 到 common chunk。
+
+这里为什么强调 『**`抽取`**』 呢？ 
+
+因为 `entry` 类型的chunk 还是可以转化为 `common` 类型的chunk 的， 方法就是在 CCP 的 `names` 中配置一个已经存在的 entry chunk 的名字。
+
+> **`minChunks: Infinity`  配置主要用于把 webpack 的runtime 单独抽取到独立的 chunk.**
+
+
+下面是 example5的配置：
 
 ```js
 var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
@@ -273,68 +284,25 @@ module.exports = {
         main: process.cwd()+'/example5/main.js',
         main1: process.cwd()+'/example5/main1.js',
         jquery:["jquery"]
-        //minChunks: Infinity时候框架代码依然会被单独打包成一个文件
     },
     output: {
         path: process.cwd() + '/dest/example5',
-        filename: '[name].js'
+        filename: '[name].entry.js'
     },
     plugins: [
         new CommonsChunkPlugin({
             name: "jquery",
-            minChunks:2//被引用两次及以上
+            filename:"[name].common.js",
+            // minChunks:2
+             minChunks:Infinity
+
         })
     ]
 };
 ```
 
-如果把上面的minChunks修改为Infinity，那么chunk1和chunk2(公有的业务逻辑部分,在main.js和main1.js中require进来)`都打包到main.js,main1.js里`，也就是共有逻辑不会抽取出来作为一个单独的chunk,而且也不会打包到jquery.js中(下面的chunks参数配置可以让共有的模块打包到jquery中)!注意：此处的jquery必须在最先加载，因为window.webpackJsonp函数是被打包到jquery.js中的!
+entry chunk `jquery` (file:`jquery.output.js` ) 被打包进 common chunk `jquery` (file:`jquery.common.js` )， 然后webpack的 runtime 也打包进 `jquery.common.js`
 
-### 参数chunks
-
-下面的配置表示：只有在main.js和main1.js中都引用的模块才会被打包的到公共模块（这里即jquery.js）
-
-```js
-var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
-module.exports = {
-    entry: {
-        main: process.cwd()+'/example6/main.js',
-        main1: process.cwd()+'/example6/main1.js',
-        jquery:["jquery"]
-    },
-    output: {
-        path: process.cwd()  + '/dest/example6',
-        filename: '[name].js'
-    },
-    plugins: [
-        new CommonsChunkPlugin({
-            name: "jquery",
-            minChunks:2,
-            chunks:["main","main1"]
-        })
-    ]
-};
-
-```
-
-
-此时你会发现在我们的jquery.js的最后会打包进来我们的chunk1.js和chunk2.js
-
-```js
-/* 2 */
-/***/ function(module, exports, __webpack_require__) {
-  __webpack_require__(3);
-  var chunk1=1;
-  exports.chunk1=chunk1;
-
-/***/ },
-/* 3 */
-/***/ function(module, exports) {
-  var chunk2=1;
-  exports.chunk2=chunk2;
-
-/***/ }
-```
 
 
 
@@ -344,7 +312,8 @@ module.exports = {
 
 ## 从 CommonsChunkPlugin 看 Compiler 对象
 
- 首先我们运行example1中的代码，其中webpack配置如下(可以在配置文件中自己打开注释部分):
+首先我们运行example1中的代码，其中webpack配置如下(可以在配置文件中自己打开注释部分):
+
 ```js
 var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 module.exports = {

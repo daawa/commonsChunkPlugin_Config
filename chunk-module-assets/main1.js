@@ -8,7 +8,10 @@ require('../map.png');
 // }
 
 if(true){
-  require.ensure([],function(require){
-    require('jquery');
-  },'world')
+  require.ensure(
+    [],
+    function(require){
+      require('jquery');
+    },
+    'world')
 }

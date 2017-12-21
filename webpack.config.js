@@ -48,71 +48,73 @@
 
 
 // example3
-let HtmlWebpackPlugin = require('html-webpack-plugin');
-let CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
-module.exports = {
-    entry: {
-        main: process.cwd()+'/example3/main.js',
-        main1: process.cwd()+'/example3/main1.js',
-        module1:process.cwd()+'/example3/module1.js',
-        module3:process.cwd()+'/example3/module3.js',
-        jquery:"jquery",
-        vue:["vue"]
-    },
-    output: {
-        path: process.cwd()+'/dest/example3',
-        filename: '[name].entry.js'
-    },
-    plugins: [
-      new HtmlWebpackPlugin({
-        inject: true,
-        chunks: ['main'],
-        filename: 'index.main.html'
-      }),
-      new HtmlWebpackPlugin({
-        inject: true,
-        chunks: ['manifest','chunk','main1'],
-        filename: 'index.main1.html'
-      }),
 
-      new CommonsChunkPlugin({
-        names: ["mylib", 'jquery','vue','load'],
-        filename:'[name].common.js',
-        minChunks:2
-      })
-    ]
-};
+// let HtmlWebpackPlugin = require('html-webpack-plugin');
+// let CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+// module.exports = {
+//     entry: {
+//         main: process.cwd()+'/example3/main.js',
+//         main1: process.cwd()+'/example3/main1.js',
+//         module1:process.cwd()+'/example3/module1.js',
+//         jquery:"jquery",
+//         vue:["vue"]
+//     },
+//     output: {
+//         path: process.cwd()+'/dest/example3',
+//         filename: '[name].entry.js'
+//     },
+//     plugins: [
+//       new HtmlWebpackPlugin({
+//         inject: true,
+//         chunks: ['main'],
+//         filename: 'index.main.html'
+//       }),
+//       new HtmlWebpackPlugin({
+//         inject: true,
+//         chunks: ['manifest','chunk','main1'],
+//         filename: 'index.main1.html'
+//       }),
+//
+//       new CommonsChunkPlugin({
+//         names: ["mylib", 'jquery','vue','load'],
+//         filename:'[name].common.js',
+//         minChunks:2
+//       })
+//     ]
+// };
 
 
 
 // example4
-let HtmlWebpackPlugin = require('html-webpack-plugin');
-let CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
-module.exports = {
-    entry: {
-        main: process.cwd()+'/example3/main.js',
-        main1: process.cwd()+'/example3/main1.js',
-        module1:process.cwd()+'/example3/module1.js',
-        module3:process.cwd()+'/example3/module3.js',
-        jquery:"jquery",
-        vue:["vue"]
-    },
-    output: {
-        path: process.cwd()+'/dest/example3',
-        filename: '[name].entry.js'
-    },
-    plugins: [
-      new CommonsChunkPlugin({
-        names: ["mylib", "module1","module3"'jquery','vue','load'],
-        filename:'[name].common.js',
-        minChunks:2
-      })
-    ]
-};
+
+// let HtmlWebpackPlugin = require('html-webpack-plugin');
+// let CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+// module.exports = {
+//     entry: {
+//         main: process.cwd()+'/example3/main.js',
+//         main1: process.cwd()+'/example3/main1.js',
+//         module1:process.cwd()+'/example3/module1.js',
+//         module3:process.cwd()+'/example3/module3.js',
+//         jquery:"jquery",
+//         vue:["vue"]
+//     },
+//     output: {
+//         path: process.cwd()+'/dest/example3',
+//         filename: '[name].entry.js'
+//     },
+//     plugins: [
+//       new CommonsChunkPlugin({
+//         names: ["mylib", "module1","module3"'jquery','vue','load'],
+//         filename:'[name].common.js',
+//         minChunks:2
+//       })
+//     ]
+// };
 
 
-//example6
-// var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+//example5
+
+// let CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 // module.exports = {
 //     entry: {
 //         main: process.cwd()+'/example5/main.js',
@@ -121,18 +123,21 @@ module.exports = {
 //     },
 //     output: {
 //         path: process.cwd() + '/dest/example5',
-//         filename: '[name].output.js'
+//         filename: '[name].entry.js'
 //     },
 //     plugins: [
 //         new CommonsChunkPlugin({
 //             name: "jquery",
+//             filename:"[name].common.js",
 //             // minChunks:2
 //              minChunks:Infinity
-
+//
 //         })
 //     ]
 // };
 
+
+//example6
 
 // var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 // module.exports = {
@@ -172,6 +177,8 @@ module.exports = {
 // }
 
 
+// example8  chunks
+
 // var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
 // var ManifestPlugin = require('webpack-manifest-plugin');
 // module.exports = {
@@ -195,33 +202,35 @@ module.exports = {
 // };
 
 //chunk-module-assets例子
-// var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
-// var FileListPlugin = require('./chunk-module-assets/FileListPlugin');
-// var ManifestPlugin = require('webpack-manifest-plugin');
-// module.exports = {
-//     entry: {
-//         main: process.cwd()+'/chunk-module-assets/main.js',
-//         main1: process.cwd()+'/chunk-module-assets/main1.js',
-//     },
-//     output: {
-//         path: process.cwd()  + '/dest/chunk-module-assets',
-//         filename: '[name].output.js'
-//     },
-//     module:{
-//       rules:[
-//       {
-//           test: /\.(png|jpg|jpeg|gif)(\?v=\d+\.\d+\.\d+)?$/i,
-//           use: {
-//             loader: require.resolve("url-loader"),
-//             //If the file is greater than the limit (in bytes) the file-loader is used and all query parameters are passed to it.
-//             //smaller than 10kb will use dataURL
-//             options: {
-//               limit: 10000
-//             }
-//           }
-//         }]
-//     },
-//     plugins: [
-//        new FileListPlugin()
-//     ]
-// };
+
+var CommonsChunkPlugin = require("webpack/lib/optimize/CommonsChunkPlugin");
+var FileListPlugin = require('./chunk-module-assets/FileListPlugin');
+var ManifestPlugin = require('webpack-manifest-plugin');
+module.exports = {
+    entry: {
+        main: process.cwd()+'/chunk-module-assets/main.js',
+        main1: process.cwd()+'/chunk-module-assets/main1.js',
+    },
+    output: {
+        path: process.cwd()  + '/dest/chunk-module-assets',
+        filename: '[name].output.js'
+    },
+    module:{
+      rules:[
+      {
+          test: /\.(png|jpg|jpeg|gif)(\?v=\d+\.\d+\.\d+)?$/i,
+          use: {
+            loader: require.resolve("url-loader"),
+            //If the file is greater than the limit (in bytes) the file-loader is used and all query parameters are passed to it.
+            //smaller than 10kb will use dataURL
+            options: {
+              limit: 10000
+            }
+          }
+        }]
+    },
+    plugins: [
+       new FileListPlugin(),
+       new ManifestPlugin()
+    ]
+};
